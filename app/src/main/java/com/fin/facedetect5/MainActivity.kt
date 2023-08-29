@@ -52,9 +52,11 @@ class MainActivity : AppCompatActivity() {
 
     private var videoCapture: VideoCapture<Recorder>? = null
     private var recording: Recording? = null
+    private var isVibrating = true
 
     private lateinit var cameraExecutor: ExecutorService
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         viewBinding = ActivityMainBinding.inflate(layoutInflater)
@@ -72,6 +74,7 @@ class MainActivity : AppCompatActivity() {
         // Set up the listeners for take photo and video capture buttons
         viewBinding.imageCaptureButton.setOnClickListener { takePhoto() }
         viewBinding.videoCaptureButton.setOnClickListener { captureVideo() }
+        viewBinding.stopButton.setOnClickListener { clickVibrateBtn() }
 
         cameraExecutor = Executors.newSingleThreadExecutor()
     }
@@ -249,8 +252,22 @@ class MainActivity : AppCompatActivity() {
         }, ContextCompat.getMainExecutor(this))
     }
 
+    private fun clickVibrateBtn() {
+        if (isVibrating) {
+            isVibrating = false
+            viewBinding.stopButton.text = "Start Vibrate"
+        } else {
+            isVibrating = true
+            viewBinding.stopButton.text = "Stop Vibrate"
+        }
+    }
+
+
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun runVibrate() {
+        if (!isVibrating) {
+            return
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val vibratorManager =
                 getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
@@ -262,7 +279,6 @@ class MainActivity : AppCompatActivity() {
             val effect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
             vibrator.vibrate(effect)
         }
-
     }
 
 
