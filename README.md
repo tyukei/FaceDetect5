@@ -1,5 +1,8 @@
 # FaceDetect5
 
+## require
+- Android 10 in September 2019 or more newer version
+
 ## demo
 
 This is an app for how many face are there in camera frame
