@@ -16,11 +16,9 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.MediaStoreOutputOptions
@@ -34,9 +32,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 import com.fin.facedetect5.databinding.ActivityMainBinding
-import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.face.FaceDetection
-import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.ExecutorService
@@ -53,6 +48,8 @@ class MainActivity : AppCompatActivity() {
     private var videoCapture: VideoCapture<Recorder>? = null
     private var recording: Recording? = null
     private var isVibrating = true
+    private var usingFrontCamera = false
+
 
     private lateinit var cameraExecutor: ExecutorService
 
@@ -75,6 +72,7 @@ class MainActivity : AppCompatActivity() {
         viewBinding.imageCaptureButton.setOnClickListener { takePhoto() }
         viewBinding.videoCaptureButton.setOnClickListener { captureVideo() }
         viewBinding.stopButton.setOnClickListener { clickVibrateBtn() }
+        viewBinding.switchCamera.setOnClickListener { switchCamera() }
 
         cameraExecutor = Executors.newSingleThreadExecutor()
     }
@@ -235,7 +233,11 @@ class MainActivity : AppCompatActivity() {
 
 
             // Select back camera as a default
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+            val cameraSelector = if (usingFrontCamera) {
+                CameraSelector.DEFAULT_FRONT_CAMERA
+            } else {
+                CameraSelector.DEFAULT_BACK_CAMERA
+            }
 
             try {
                 // Unbind use cases before rebinding
@@ -288,10 +290,17 @@ class MainActivity : AppCompatActivity() {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun switchCamera() {
+        usingFrontCamera = !usingFrontCamera
+        startCamera()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         cameraExecutor.shutdown()
     }
+
 
     companion object {
         private const val TAG = "CameraXApp"
@@ -306,49 +315,5 @@ class MainActivity : AppCompatActivity() {
                     add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 }
             }.toTypedArray()
-    }
-}
-
-private class LuminosityAnalyzer(private val listener: LumaListener) : ImageAnalysis.Analyzer {
-
-    private fun ByteBuffer.toByteArray(): ByteArray {
-        rewind()    // Rewind the buffer to zero
-        val data = ByteArray(remaining())
-        get(data)   // Copy the buffer into a byte array
-        return data // Return the byte array
-    }
-
-    override fun analyze(image: ImageProxy) {
-
-        val buffer = image.planes[0].buffer
-        val data = buffer.toByteArray()
-        val pixels = data.map { it.toInt() and 0xFF }
-        val luma = pixels.average()
-
-        listener(luma)
-
-        image.close()
-    }
-}
-
-private class FaceAnalyzer(private var listener: (Int) -> Unit) : ImageAnalysis.Analyzer {
-    private val detector = FaceDetection.getClient()
-
-    @ExperimentalGetImage
-    override fun analyze(imageProxy: ImageProxy) {
-
-        val mediaImage = imageProxy.image ?: return
-        val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-
-        detector.process(image)
-            .addOnSuccessListener { faces ->
-                listener(faces.size)
-            }
-            .addOnFailureListener { e ->
-                Log.e("FaceAnalyzer", "Face detection failure.", e)
-            }
-            .addOnCompleteListener {
-                imageProxy.close()
-            }
     }
 }
