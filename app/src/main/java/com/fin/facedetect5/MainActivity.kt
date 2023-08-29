@@ -2,13 +2,18 @@ package com.fin.facedetect5
 
 import android.Manifest
 import android.content.ContentValues
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.provider.MediaStore
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ExperimentalGetImage
@@ -188,6 +193,7 @@ class MainActivity : AppCompatActivity() {
             }
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
 
@@ -212,13 +218,14 @@ class MainActivity : AppCompatActivity() {
             val imageAnalyzer = ImageAnalysis.Builder()
                 .build()
                 .also {
-                    it.setAnalyzer(cameraExecutor, FaceAnalyzer {faces ->
+                    it.setAnalyzer(cameraExecutor, FaceAnalyzer { faces ->
                         Log.d(TAG, "Face detected: $faces")
-                        if(faces>0) {
+                        if (faces > 0) {
                             viewBinding.tvMessage.visibility = View.VISIBLE
                             viewBinding.tvMessage.text = faces.toString()
-                        }else{
+                        } else {
                             viewBinding.tvMessage.visibility = View.INVISIBLE
+                            runVibrate()
                         }
                     })
                 }
@@ -240,6 +247,22 @@ class MainActivity : AppCompatActivity() {
             }
 
         }, ContextCompat.getMainExecutor(this))
+    }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun runVibrate() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vibratorManager =
+                getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            val vibrator = vibratorManager.defaultVibrator
+            val effect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
+            vibrator.vibrate(effect)
+        } else {
+            val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            val effect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
+            vibrator.vibrate(effect)
+        }
+
     }
 
 
