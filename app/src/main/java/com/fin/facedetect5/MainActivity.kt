@@ -58,7 +58,6 @@ class MainActivity : AppCompatActivity() {
     private val bottom = 100
 
 
-
     private lateinit var cameraExecutor: ExecutorService
 
     @RequiresApi(Build.VERSION_CODES.Q)
@@ -229,11 +228,12 @@ class MainActivity : AppCompatActivity() {
             val imageAnalyzer = ImageAnalysis.Builder()
                 .build()
                 .also {
-                    it.setAnalyzer(cameraExecutor, FaceAnalyzer { faceCount, isFrontFacing->
+                    it.setAnalyzer(cameraExecutor, FaceAnalyzer { faceCount, isFrontFacing, face ->
                         if (isFrontFacing) {
                             overlayView?.clearFrame() // Clear any existing frames
                             viewBinding.tvMessage.visibility = View.VISIBLE
                             viewBinding.tvMessage.text = faceCount.toString()
+                            overlayView?.drawFrameAroundFace(face!!.boundingBox)
                         } else {
                             overlayView?.clearFrame()
                             viewBinding.tvMessage.visibility = View.INVISIBLE

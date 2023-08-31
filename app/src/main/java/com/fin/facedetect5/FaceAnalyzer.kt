@@ -5,11 +5,12 @@ import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.face.Face
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
 import com.google.mlkit.vision.face.FaceLandmark
 
-class FaceAnalyzer(private var listener: (Int, Boolean) -> Unit) : ImageAnalysis.Analyzer {
+class FaceAnalyzer(private var listener: (Int, Boolean, Face?) -> Unit) : ImageAnalysis.Analyzer {
     private val options = FaceDetectorOptions.Builder()
         .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
         .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_ALL)
@@ -23,6 +24,7 @@ class FaceAnalyzer(private var listener: (Int, Boolean) -> Unit) : ImageAnalysis
 
         val mediaImage = imageProxy.image ?: return
         val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
+        var face: Face? = null
 
         detector.process(image)
             .addOnSuccessListener { faces ->
@@ -30,15 +32,15 @@ class FaceAnalyzer(private var listener: (Int, Boolean) -> Unit) : ImageAnalysis
                 var isFullFace = false
                 if (faces.size > 0) {
                     Log.d("FaceAnalyzer", "faces.size: ${faces.size}")
-                    val face = faces[0]
+                    face = faces[0]
 
-                    val leftEye = face.getLandmark(FaceLandmark.LEFT_EYE)
-                    val rightEye = face.getLandmark(FaceLandmark.RIGHT_EYE)
-                    val leftEar = face.getLandmark(FaceLandmark.LEFT_EAR)
-                    val rightEar = face.getLandmark(FaceLandmark.RIGHT_EAR)
-                    val mouthLeft = face.getLandmark(FaceLandmark.MOUTH_LEFT)
-                    val mouthRight = face.getLandmark(FaceLandmark.MOUTH_RIGHT)
-                    val noseBase = face.getLandmark(FaceLandmark.NOSE_BASE)
+                    val leftEye = face?.getLandmark(FaceLandmark.LEFT_EYE)
+                    val rightEye = face?.getLandmark(FaceLandmark.RIGHT_EYE)
+                    val leftEar = face?.getLandmark(FaceLandmark.LEFT_EAR)
+                    val rightEar = face?.getLandmark(FaceLandmark.RIGHT_EAR)
+                    val mouthLeft = face?.getLandmark(FaceLandmark.MOUTH_LEFT)
+                    val mouthRight = face?.getLandmark(FaceLandmark.MOUTH_RIGHT)
+                    val noseBase = face?.getLandmark(FaceLandmark.NOSE_BASE)
                     Log.d("FaceAnalyzer", "leftEye: $leftEye")
 
                     isFullFace = leftEye != null && rightEye != null &&
@@ -47,15 +49,15 @@ class FaceAnalyzer(private var listener: (Int, Boolean) -> Unit) : ImageAnalysis
                             noseBase != null
 
 
-                    if (isFullFace) {
-                        val yaw = face.headEulerAngleY
-                        val roll = face.headEulerAngleZ
-                        isFrontFacing = (kotlin.math.abs(yaw) < 5) && (kotlin.math.abs(roll) < 5)
+                    isFrontFacing = if (isFullFace) {
+                        val yaw = face?.headEulerAngleY
+                        val roll = face?.headEulerAngleZ
+                        (kotlin.math.abs(yaw!!) < 5) && (kotlin.math.abs(roll!!) < 5)
                     } else {
-                        isFrontFacing = false
+                        false
                     }
                 }
-                listener(faces.size, isFrontFacing)
+                listener(faces.size, isFrontFacing, face)
 
             }
             .addOnFailureListener { e ->
