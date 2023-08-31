@@ -229,16 +229,11 @@ class MainActivity : AppCompatActivity() {
             val imageAnalyzer = ImageAnalysis.Builder()
                 .build()
                 .also {
-                    it.setAnalyzer(cameraExecutor, FaceAnalyzer { faces ->
-                        Log.d(TAG, "Face detected: $faces")
-                        if (faces > 0) {
+                    it.setAnalyzer(cameraExecutor, FaceAnalyzer { faceCount, isFrontFacing->
+                        if (isFrontFacing) {
                             overlayView?.clearFrame() // Clear any existing frames
-                            for (face in 1..faces) {
-                                val boundingBox = Rect(left, top, right, bottom)
-                                detectedFaces.add(boundingBox)
-                            }
                             viewBinding.tvMessage.visibility = View.VISIBLE
-                            viewBinding.tvMessage.text = faces.toString()
+                            viewBinding.tvMessage.text = faceCount.toString()
                         } else {
                             overlayView?.clearFrame()
                             viewBinding.tvMessage.visibility = View.INVISIBLE
