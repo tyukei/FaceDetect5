@@ -1,6 +1,7 @@
 package com.fin.facedetect5
 
 import android.util.Log
+import android.util.Size
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
@@ -10,10 +11,13 @@ import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
 import com.google.mlkit.vision.face.FaceLandmark
 
-class FaceAnalyzer(private var listener: (Int, Boolean, Face?) -> Unit) : ImageAnalysis.Analyzer {
+class FaceAnalyzer(private var listener: (Int, Boolean, Face?) -> Unit) :
+    ImageAnalysis.Analyzer {
     private val options = FaceDetectorOptions.Builder()
-        .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
+        .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
         .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_ALL)
+        .setContourMode(FaceDetectorOptions.CONTOUR_MODE_ALL)
+        .setContourMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL)
         .build()
 
     private val detector = FaceDetection.getClient(options)
@@ -33,7 +37,6 @@ class FaceAnalyzer(private var listener: (Int, Boolean, Face?) -> Unit) : ImageA
                 if (faces.size > 0) {
                     Log.d("FaceAnalyzer", "faces.size: ${faces.size}")
                     face = faces[0]
-
                     val leftEye = face?.getLandmark(FaceLandmark.LEFT_EYE)
                     val rightEye = face?.getLandmark(FaceLandmark.RIGHT_EYE)
                     val leftEar = face?.getLandmark(FaceLandmark.LEFT_EAR)

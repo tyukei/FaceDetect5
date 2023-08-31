@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
-import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
@@ -33,6 +32,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 import com.fin.facedetect5.databinding.ActivityMainBinding
+import com.fin.facedetect5.view.CustomFaceView
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.ExecutorService
@@ -43,6 +43,8 @@ typealias LumaListener = (luma: Double) -> Unit
 
 class MainActivity : AppCompatActivity() {
     private lateinit var viewBinding: ActivityMainBinding
+    private lateinit var customFaceView: CustomFaceView
+
 
     private var imageCapture: ImageCapture? = null
 
@@ -50,12 +52,7 @@ class MainActivity : AppCompatActivity() {
     private var recording: Recording? = null
     private var isVibrating = true
     private var usingFrontCamera = false
-    private var overlayView: OverlayView? = null
-    private val detectedFaces = mutableListOf<Rect>()
-    private val left = 100
-    private val top = 100
-    private val right = 100
-    private val bottom = 100
+//    private var overlayView: OverlayView? = null
 
 
     private lateinit var cameraExecutor: ExecutorService
@@ -63,9 +60,10 @@ class MainActivity : AppCompatActivity() {
     @RequiresApi(Build.VERSION_CODES.Q)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        viewBinding = ActivityMainBinding.inflate(layoutInflater)
+        viewBinding = com.fin.facedetect5.databinding.ActivityMainBinding.inflate(layoutInflater)
         setContentView(viewBinding.root)
-        overlayView = viewBinding.overlayView
+//        overlayView = viewBinding.overlayView
+        customFaceView = findViewById<CustomFaceView>(R.id.customFaceView)
 
         // Request camera permissions
         if (allPermissionsGranted()) {
@@ -228,26 +226,31 @@ class MainActivity : AppCompatActivity() {
             val imageAnalyzer = ImageAnalysis.Builder()
                 .build()
                 .also {
-                    it.setAnalyzer(cameraExecutor, FaceAnalyzer { faceCount, isFrontFacing, face ->
-                        if (isFrontFacing) {
-                            overlayView?.clearFrame() // Clear any existing frames
-                            viewBinding.tvMessage.visibility = View.VISIBLE
-                            viewBinding.tvMessage.text = faceCount.toString()
-                            overlayView?.drawFrameAroundFace(face!!.boundingBox)
-                        } else {
-                            overlayView?.clearFrame()
-                            viewBinding.tvMessage.visibility = View.INVISIBLE
-                            runVibrate()
-                        }
-                    })
+                    it.setAnalyzer(
+                        cameraExecutor,
+                        FaceAnalyzer { faceCount, isFrontFacing, face ->
+                            if (isFrontFacing) {
+//                                overlayView?.clearFrame() // Clear any existing frames
+                                viewBinding.tvMessage.visibility = View.VISIBLE
+                                viewBinding.tvMessage.text = faceCount.toString()
+//                                overlayView?.setImageSize(face!!)
+//                                overlayView?.drawFrameAroundFace(face!!.boundingBox)
+                                customFaceView.updateFace(face!!)
+                            } else {
+//                                overlayView?.clearFrame()
+                                customFaceView.updateFace(null)
+                                viewBinding.tvMessage.visibility = View.INVISIBLE
+                                runVibrate()
+                            }
+                        })
                 }
 
 
             // Select back camera as a default
             val cameraSelector = if (usingFrontCamera) {
-                CameraSelector.DEFAULT_FRONT_CAMERA
-            } else {
                 CameraSelector.DEFAULT_BACK_CAMERA
+            } else {
+                CameraSelector.DEFAULT_FRONT_CAMERA
             }
 
             try {
