@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
@@ -49,6 +50,13 @@ class MainActivity : AppCompatActivity() {
     private var recording: Recording? = null
     private var isVibrating = true
     private var usingFrontCamera = false
+    private var overlayView: OverlayView? = null
+    private val detectedFaces = mutableListOf<Rect>()
+    private val left = 100
+    private val top = 100
+    private val right = 100
+    private val bottom = 100
+
 
 
     private lateinit var cameraExecutor: ExecutorService
@@ -58,6 +66,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         viewBinding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(viewBinding.root)
+        overlayView = viewBinding.overlayView
 
         // Request camera permissions
         if (allPermissionsGranted()) {
@@ -73,6 +82,7 @@ class MainActivity : AppCompatActivity() {
         viewBinding.videoCaptureButton.setOnClickListener { captureVideo() }
         viewBinding.stopButton.setOnClickListener { clickVibrateBtn() }
         viewBinding.switchCamera.setOnClickListener { switchCamera() }
+
 
         cameraExecutor = Executors.newSingleThreadExecutor()
     }
@@ -222,9 +232,15 @@ class MainActivity : AppCompatActivity() {
                     it.setAnalyzer(cameraExecutor, FaceAnalyzer { faces ->
                         Log.d(TAG, "Face detected: $faces")
                         if (faces > 0) {
+                            overlayView?.clearFrame() // Clear any existing frames
+                            for (face in 1..faces) {
+                                val boundingBox = Rect(left, top, right, bottom)
+                                detectedFaces.add(boundingBox)
+                            }
                             viewBinding.tvMessage.visibility = View.VISIBLE
                             viewBinding.tvMessage.text = faces.toString()
                         } else {
+                            overlayView?.clearFrame()
                             viewBinding.tvMessage.visibility = View.INVISIBLE
                             runVibrate()
                         }
