@@ -279,6 +279,8 @@ class MainActivity : AppCompatActivity() {
 
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun runVibrate() {
+        val fastPattern = longArrayOf(0, 100, 100, 100) // On for 100ms, off for 100ms
+        val slowPattern = longArrayOf(0, 500, 500, 500) // On for 500ms, off for 500ms
         if (!isVibrating) {
             return
         }
@@ -286,11 +288,15 @@ class MainActivity : AppCompatActivity() {
             val vibratorManager =
                 getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
             val vibrator = vibratorManager.defaultVibrator
-            val effect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
+            // TODO: Add a toggle to switch between fast and slow patterns
+            val pattern = fastPattern
+            val effect = VibrationEffect.createWaveform(pattern, -1) // -1 means don't repeat
             vibrator.vibrate(effect)
         } else {
             val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-            val effect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
+            // TODO: Add a toggle to switch between fast and slow patterns
+            val pattern = fastPattern
+            val effect = VibrationEffect.createWaveform(pattern, -1) // -1 means don't repeat
             vibrator.vibrate(effect)
         }
     }
