@@ -12,6 +12,7 @@ import android.os.VibratorManager
 import android.provider.MediaStore
 import android.util.Log
 import android.view.View
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
@@ -42,10 +43,10 @@ import java.util.concurrent.Executors
 class MainActivity : AppCompatActivity() {
     private lateinit var viewBinding: ActivityMainBinding
     private lateinit var customFaceView: CustomFaceView
+    private var faceImageView: ImageView = findViewById(R.id.faceImageView)
 
 
     private var imageCapture: ImageCapture? = null
-
     private var videoCapture: VideoCapture<Recorder>? = null
     private var recording: Recording? = null
     private var isVibrating = true
@@ -226,7 +227,7 @@ class MainActivity : AppCompatActivity() {
                 .also {
                     it.setAnalyzer(
                         cameraExecutor,
-                        FaceAnalyzer { faceCount, isFrontFacing, face ->
+                        FaceAnalyzer { faceCount, isFrontFacing, face, visualizedBitmap ->
                             if (isFrontFacing) {
 //                                overlayView?.clearFrame() // Clear any existing frames
                                 viewBinding.tvMessage.visibility = View.VISIBLE
